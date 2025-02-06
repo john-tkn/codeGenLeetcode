@@ -81,8 +81,8 @@ func main() {
 	_, err = f.WriteString(CFileHeaders)
 	check(err)
 
-	//write headers 
-	for i:= range len(codeLines) {
+	//write the code given earlier (the function)
+	for i:= range codeLines {
 		_, err = f.WriteString(codeLines[i] + "\n")
 		check(err)
 	}
@@ -103,7 +103,7 @@ func main() {
 	for true {
 		for i < len(codeVars)-1 {
 			//print header for test case
-			_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator + "\n"));
+			_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator) + "\n");
 			fmt.Printf("Please enter a value for %s %s\n", codeVars[i], codeVars[i+1])
 			scanner.Scan()
 			codeLineUserIn = scanner.Text()
@@ -156,7 +156,7 @@ func main() {
 			var proccessedAnswers []string
 			proccessedAnswers = strings.Split(answers, " ")
 			
-			for k := range len(proccessedAnswers) {
+			for k := range proccessedAnswers {
 				//
 				_, err = f.WriteString("\tif(")
 				_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + "[" + fmt.Sprintf("%d", k) + "] != " + proccessedAnswers[k] + ") {\n\t\treturn -1;\n\t}\n")
