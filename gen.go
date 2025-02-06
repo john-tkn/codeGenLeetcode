@@ -71,7 +71,7 @@ func main() {
 
 	codeVars := getVariableNames(codeLines[0])
 	//name the file according to the name of the function
-	fileName := fmt.Sprintf("./%s.c", codeVars[1])
+	fileName := fmt.Sprintf("./code/%s.c", codeVars[1])
 	//create the file
 	f, err := os.Create(fileName)
 	check(err)
