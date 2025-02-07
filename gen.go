@@ -161,6 +161,15 @@ func main() {
 				_, err = f.WriteString("\tif(")
 				_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + "[" + fmt.Sprintf("%d", k) + "] != " + proccessedAnswers[k] + ") {\n\t\treturn -1;\n\t}\n")
 			}
+		//check if the anwser is a string
+		} else if strings.Contains(answers, "\"") {
+			_, err = f.WriteString("\tif(")
+			//_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
+			answers = strings.Replace(answers, "\"", "", -1)
+			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\treturn -1;\n\t}\n")
+		} else {
+			_, err = f.WriteString("\tif(")
+			_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
 		}
 		
 		
