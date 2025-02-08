@@ -1,17 +1,16 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "os"
+	"bufio"
+	"fmt"
+	"os"
 	"strings"
 )
- 	
 
 func check(e error) {
-    if e != nil {
-        panic(e)
-    }
+	if e != nil {
+		panic(e)
+	}
 }
 
 type codeVars struct {
@@ -19,10 +18,9 @@ type codeVars struct {
 	varName string
 }
 
-
 var CFileHeaders string = "#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n#include <stdlib.h>\n\n\n\n"
 
-func getFunctionName(codeLineIn string) string{
+func getFunctionName(codeLineIn string) string {
 	codeLineIn = strings.Replace(codeLineIn, "(", " ", -1)
 	fmt.Println(codeLineIn + "\n")
 	parts := strings.Split(codeLineIn, " ")
@@ -30,14 +28,14 @@ func getFunctionName(codeLineIn string) string{
 	return parts[1]
 }
 
-func getVariableNames(codeLineIn string) []string{
+func getVariableNames(codeLineIn string) []string {
 	//remove extra symbols
 	codeLineIn = strings.Replace(codeLineIn, "(", " ", -1)
 	codeLineIn = strings.Replace(codeLineIn, ",", "", -1)
 	codeLineIn = strings.Replace(codeLineIn, ")", "", -1)
 	codeLineIn = strings.Replace(codeLineIn, "{", "", -1)
 	//split it by spaces
-	parts := strings.Split(codeLineIn, " ")	
+	parts := strings.Split(codeLineIn, " ")
 	//return the vars and var names
 	return parts
 }
@@ -51,15 +49,36 @@ func main() {
 	var codeLines []string
 	var codeLineUserIn string
 
+	var ltDescin string
+	var ltDesc []string
+
+	var ltProbNum string
+	scanner := bufio.NewScanner(os.Stdin)
+
 	/*
-		Get the function
+		Get the problem Description
 
 	*/
+	fmt.Printf("LTgen v2.0\n\n")
+	fmt.Printf("Enter the problem Number\n")
+	scanner.Scan()
+	ltProbNum = scanner.Text()
+
+	fmt.Printf("Enter the problem Description. Press . when done\n")
+	for true {
+		scanner.Scan()
+		ltDescin = scanner.Text()
+		if ltDescin == "." {
+			break
+		} else {
+			ltDesc = append(ltDesc, ltDescin)
+		}
+	}
 
 	//get code from user
 	fmt.Printf("Enter the code. Press . when done\n")
-	scanner := bufio.NewScanner(os.Stdin)
-	for true{
+
+	for true {
 		scanner.Scan()
 		codeLineUserIn = scanner.Text()
 		if codeLineUserIn == "." {
@@ -68,31 +87,51 @@ func main() {
 			codeLines = append(codeLines, codeLineUserIn)
 		}
 	}
-
+	//process first line
 	codeVars := getVariableNames(codeLines[0])
+
+	//create the folder for all the code
+	fileFolderName := fmt.Sprint(codeVars[1], ltProbNum)
+	fmt.Println(fileFolderName)
+	os.Mkdir(fileFolderName, os.ModePerm)
+
+	//create the txt file with problem desc
+
+	txtfileName := fmt.Sprintf("./%s/%s%s.txt", fileFolderName, codeVars[1], ltProbNum)
+	fmt.Println("codeVars[1]:", codeVars[1])
+	fmt.Println("ltProbNum:", ltProbNum)
+	fmt.Println(txtfileName)
+	//create the file
+	txtFileDesc, err := os.Create(txtfileName)
+	for i := range ltDesc {
+		_, err = txtFileDesc.WriteString(ltDesc[i] + "\n")
+		check(err)
+	}
+
+	defer txtFileDesc.Close()
+
 	//name the file according to the name of the function
-	fileName := fmt.Sprintf("./code/%s.c", codeVars[1])
+	fileName := fmt.Sprintf("%s/%s%s.c", fileFolderName, codeVars[1], ltProbNum)
 	//create the file
 	f, err := os.Create(fileName)
 	check(err)
 	defer f.Close()
 
-	
 	_, err = f.WriteString(CFileHeaders)
 	check(err)
 
 	//write the code given earlier (the function)
-	for i:= range codeLines {
+	for i := range codeLines {
 		_, err = f.WriteString(codeLines[i] + "\n")
 		check(err)
 	}
 	_, err = f.WriteString("\n\n\n")
-	
+
 	//write main
-    _, err = f.WriteString("int main(int argc, char *argv[]) {\n")
+	_, err = f.WriteString("int main(int argc, char *argv[]) {\n")
 
 	defer f.Close()
-	
+
 	/*
 		Get the Values of the test case
 		and write them
@@ -103,25 +142,25 @@ func main() {
 	for true {
 		for i < len(codeVars)-1 {
 			//print header for test case
-			_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator) + "\n");
+			_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator) + "\n")
 			fmt.Printf("Please enter a value for %s %s\n", codeVars[i], codeVars[i+1])
 			scanner.Scan()
 			codeLineUserIn = scanner.Text()
-			//check if the test case value is an array 
+			//check if the test case value is an array
 			if !strings.Contains(codeLineUserIn, "[") || !strings.Contains(codeLineUserIn, "{") && !strings.Contains(codeVars[i], "*") {
 				//not an array
 				codeVarNoPoint := strings.Replace(codeVars[i], "*", "", -1)
 				_, err = f.WriteString("\t" + codeVarNoPoint + " " + codeVars[i+1] + fmt.Sprintf("%d", testCaseAccumulator) + " = " + codeLineUserIn + ";\n")
-			check(err)
+				check(err)
 			} else {
-			//is an array
-			codeVarNoPoint := strings.Replace(codeVars[i], "*", "", -1)
-			codeLineUserIn = strings.Replace(codeLineUserIn, "[", "{", -1)
-			codeLineUserIn = strings.Replace(codeLineUserIn, "]", "}", -1)
-			_, err = f.WriteString("\t" + codeVarNoPoint + " " + codeVars[i+1] + fmt.Sprintf("%d", testCaseAccumulator)+ "[]" + " = " + codeLineUserIn + ";\n")
+				//is an array
+				codeVarNoPoint := strings.Replace(codeVars[i], "*", "", -1)
+				codeLineUserIn = strings.Replace(codeLineUserIn, "[", "{", -1)
+				codeLineUserIn = strings.Replace(codeLineUserIn, "]", "}", -1)
+				_, err = f.WriteString("\t" + codeVarNoPoint + " " + codeVars[i+1] + fmt.Sprintf("%d", testCaseAccumulator) + "[]" + " = " + codeLineUserIn + ";\n")
 			}
 			check(err)
-			i+=2
+			i += 2
 		}
 		//get the answer to the test case
 		fmt.Printf("Enter the expected answer\n")
@@ -138,7 +177,7 @@ func main() {
 				_, err = f.WriteString(", ")
 			}
 
-			j+=2
+			j += 2
 		}
 		_, err = f.WriteString(");\n")
 
@@ -155,13 +194,13 @@ func main() {
 			answers = strings.Replace(answers, ",", " ", -1)
 			var proccessedAnswers []string
 			proccessedAnswers = strings.Split(answers, " ")
-			
+
 			for k := range proccessedAnswers {
 				//
 				_, err = f.WriteString("\tif(")
-				_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + "[" + fmt.Sprintf("%d", k) + "] != " + proccessedAnswers[k] + ") {\n\t\treturn -1;\n\t}\n")
+				_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + "[" + fmt.Sprintf("%d", k) + "] != " + proccessedAnswers[k] + ") {\n\t\treturn -1;\n\t}\n")
 			}
-		//check if the anwser is a string
+			//check if the anwser is a string
 		} else if strings.Contains(answers, "\"") {
 			_, err = f.WriteString("\tif(")
 			//_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
@@ -169,10 +208,9 @@ func main() {
 			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\treturn -1;\n\t}\n")
 		} else {
 			_, err = f.WriteString("\tif(")
-			_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
+			_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
 		}
-		
-		
+
 		testCaseAccumulator++
 		//ask for another test case
 		fmt.Printf("Whould you like to continue? y/n\n")
