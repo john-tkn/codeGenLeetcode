@@ -110,12 +110,42 @@ func main() {
 
 	defer txtFileDesc.Close()
 
+	/**
+
+	Write PROBLEM.h
+	*/
 	//name the file according to the name of the function
-	fileName := fmt.Sprintf("%s/%s%s.c", fileFolderName, codeVars[1], ltProbNum)
+	os.Mkdir(fileFolderName+"/src", os.ModePerm)
+	fileNameHeaderFile := fmt.Sprintf("%s/src/%s.h", fileFolderName, codeVars[1])
+	//create the file
+	fHeaderFile, err := os.Create(fileNameHeaderFile)
+	check(err)
+
+	headerFileForTestText := fmt.Sprintf("#ifndef %s_H\n#define %s_H\n", strings.ToUpper(codeVars[1]), strings.ToUpper(codeVars[1]))
+	fHeaderFile.WriteString(headerFileForTestText)
+
+	firstLine := strings.Replace(codeLines[0], " {", ";", -1)
+	fHeaderFile.WriteString(firstLine + "\n")
+
+	headerFileForTestText = fmt.Sprintf("#endif %s_H", strings.ToUpper(codeVars[1]))
+	fHeaderFile.WriteString(headerFileForTestText)
+	defer fHeaderFile.Close()
+
+	/**
+
+	Write PROBLEM.c
+	*/
+
+	//name the file according to the name of the function
+	fileName := fmt.Sprintf("%s/src/%s.c", fileFolderName, codeVars[1])
 	//create the file
 	f, err := os.Create(fileName)
 	check(err)
 	defer f.Close()
+
+	testFunctionHeaders := fmt.Sprintf("#include \"../src/%s.h\"\n", codeVars[1])
+
+	_, err = f.WriteString(testFunctionHeaders)
 
 	_, err = f.WriteString(CFileHeaders)
 	check(err)
@@ -128,9 +158,26 @@ func main() {
 	_, err = f.WriteString("\n\n\n")
 
 	//write main
-	_, err = f.WriteString("int main(int argc, char *argv[]) {\n")
+	//_, err = f.WriteString("int main(int argc, char *argv[]) {\n")
 
 	defer f.Close()
+
+	/*
+
+		Write tests/test_problemname.c
+
+	*/
+
+	//name the file according to the name of the function
+	os.Mkdir("./"+fileFolderName+"/tests", os.ModePerm)
+	fileName = fmt.Sprintf("%s/tests/%s_test.c", fileFolderName, codeVars[1])
+	//create the file
+	f, err = os.Create(fileName)
+	check(err)
+	//write headers
+	_, err = f.WriteString(CFileHeaders)
+	testFunctionHeaders = fmt.Sprintf("#include \"../src/%s.h\"\n", codeVars[1])
+	_, err = f.WriteString(testFunctionHeaders)
 
 	/*
 		Get the Values of the test case
@@ -140,9 +187,11 @@ func main() {
 	//Get the testcode variables
 	i := 2
 	for true {
+		_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator) + "\n")
+		_, err = f.WriteString("void test_case_" + fmt.Sprintf("%d", testCaseAccumulator) + "() {")
 		for i < len(codeVars)-1 {
 			//print header for test case
-			_, err = f.WriteString("//test case" + fmt.Sprintf("%d", testCaseAccumulator) + "\n")
+
 			fmt.Printf("Please enter a value for %s %s\n", codeVars[i], codeVars[i+1])
 			scanner.Scan()
 			codeLineUserIn = scanner.Text()
@@ -205,10 +254,10 @@ func main() {
 			_, err = f.WriteString("\tif(")
 			//_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
 			answers = strings.Replace(answers, "\"", "", -1)
-			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\treturn -1;\n\t}\n")
+			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\n\");\n\t}\n}\n")
 		} else {
 			_, err = f.WriteString("\tif(")
-			_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
+			_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\n\");\n\t}\n}\n")
 		}
 
 		testCaseAccumulator++
@@ -220,11 +269,24 @@ func main() {
 			_, err = f.WriteString("\n\n")
 			i = 2
 		} else if strings.Contains(codeLineUserIn, "n") || strings.Contains(codeLineUserIn, "N") {
+			//write main
+			_, err = f.WriteString("int main(int argc, char *argv[]) {\n")
+			for i = 0; i < testCaseAccumulator; i++ {
+				f.WriteString("\ttest_case_" + fmt.Sprintf("%d", i) + "();")
+			}
+			f.WriteString("\n}")
 			break
 		}
 	}
 
-	//write the final return for if all the functions ran correctly
-	_, err = f.WriteString("\treturn 0;\n}")
+	//write the makefile
+
+	//name the file according to the name of the function
+	fileNameMake := fmt.Sprintf("%s/Makefile", fileFolderName)
+	//create the file
+	fMakeFile, err := os.Create(fileNameMake)
+
+	fMakeFile.WriteString(codeVars[1] + ":\n\tcc ./tests/" + codeVars[1] + "_test.c" + " ./src/" + codeVars[1] + ".c")
+	defer fMakeFile.Close()
 
 }
