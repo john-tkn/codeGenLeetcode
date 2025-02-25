@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -91,16 +92,21 @@ func main() {
 	codeVars := getVariableNames(codeLines[0])
 
 	//create the folder for all the code
-	fileFolderName := fmt.Sprint(codeVars[1], ltProbNum)
+	//fileFolderName := fmt.Sprint(codeVars[1], ltProbNum)
+	fileFolderName := filepath.Join(".", fmt.Sprint(codeVars[1], ltProbNum))
+
 	fmt.Println(fileFolderName)
 	os.Mkdir(fileFolderName, os.ModePerm)
 
 	//create the txt file with problem desc
 
-	txtfileName := fmt.Sprintf("./%s/%s%s.txt", fileFolderName, codeVars[1], ltProbNum)
-	fmt.Println("codeVars[1]:", codeVars[1])
-	fmt.Println("ltProbNum:", ltProbNum)
-	fmt.Println(txtfileName)
+	//txtfileName := fmt.Sprintf("./%s/%s%s.txt", fileFolderName, codeVars[1], ltProbNum)
+
+	txtfileName := filepath.Join(".", fileFolderName, fmt.Sprintf("%s%s.txt", codeVars[1], ltProbNum))
+
+	//fmt.Println("codeVars[1]:", codeVars[1])
+	//fmt.Println("ltProbNum:", ltProbNum)
+	//fmt.Println(txtfileName)
 	//create the file
 	txtFileDesc, err := os.Create(txtfileName)
 	for i := range ltDesc {
@@ -115,8 +121,13 @@ func main() {
 	Write PROBLEM.h
 	*/
 	//name the file according to the name of the function
-	os.Mkdir(fileFolderName+"/src", os.ModePerm)
-	fileNameHeaderFile := fmt.Sprintf("%s/src/%s.h", fileFolderName, codeVars[1])
+
+	FolderSrcPath := filepath.Join(".", fileFolderName, "src")
+
+	os.Mkdir(FolderSrcPath, os.ModePerm)
+	//fileNameHeaderFile := fmt.Sprintf("%s/src/%s.h", fileFolderName, codeVars[1])
+	fileNameHeaderFile := filepath.Join(".", fileFolderName, "src", fmt.Sprintf("%s.h", codeVars[1]))
+
 	//create the file
 	fHeaderFile, err := os.Create(fileNameHeaderFile)
 	check(err)
@@ -137,7 +148,10 @@ func main() {
 	*/
 
 	//name the file according to the name of the function
-	fileName := fmt.Sprintf("%s/src/%s.c", fileFolderName, codeVars[1])
+	//fileName := fmt.Sprintf("%s/src/%s.c", fileFolderName, codeVars[1])
+
+	fileName := filepath.Join(".", fileFolderName, "src", fmt.Sprintf("%s.c", codeVars[1]))
+
 	//create the file
 	f, err := os.Create(fileName)
 	check(err)
@@ -169,10 +183,19 @@ func main() {
 	*/
 
 	//name the file according to the name of the function
-	os.Mkdir("./"+fileFolderName+"/tests", os.ModePerm)
-	fileName = fmt.Sprintf("%s/tests/%s_test.c", fileFolderName, codeVars[1])
+
+	testsDir := filepath.Join(".", fileFolderName, "tests")
+
+	os.Mkdir(testsDir, os.ModePerm)
+
+	fileNameTests := filepath.Join(".", fileFolderName, "tests", fmt.Sprintf("%s_test.c", codeVars[1]))
+
+	fmt.Println(fileNameTests)
+
+	//fileName = fmt.Sprintf("%s/tests/%s_test.c", fileFolderName, codeVars[1])
+
 	//create the file
-	f, err = os.Create(fileName)
+	f, err = os.Create(fileNameTests)
 	check(err)
 	//write headers
 	_, err = f.WriteString(CFileHeaders)
@@ -254,10 +277,10 @@ func main() {
 			_, err = f.WriteString("\tif(")
 			//_, err = f.WriteString("result"+ fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\treturn -1;\n\t}\n")
 			answers = strings.Replace(answers, "\"", "", -1)
-			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\n\");\n\t}\n}\n")
+			_, err = f.WriteString("strcmp(result" + fmt.Sprintf("%d", testCaseAccumulator) + ", \"" + answers + "\") == 1 ) {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\\n\");\n\t}\n}\n")
 		} else {
 			_, err = f.WriteString("\tif(")
-			_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\n\");\n\t}\n}\n")
+			_, err = f.WriteString("result" + fmt.Sprintf("%d", testCaseAccumulator) + " != " + answers + ") {\n\t\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " FAILED\\n\");\n\t} else {\n\tprintf(\"Test" + fmt.Sprintf("%d", testCaseAccumulator) + " PASSED\\n\");\n\t}\n}\n")
 		}
 
 		testCaseAccumulator++
@@ -282,7 +305,9 @@ func main() {
 	//write the makefile
 
 	//name the file according to the name of the function
-	fileNameMake := fmt.Sprintf("%s/Makefile", fileFolderName)
+	//fileNameMake := fmt.Sprintf("%s/Makefile", fileFolderName)
+	fileNameMake := filepath.Join(fileFolderName, "Makefile")
+
 	//create the file
 	fMakeFile, err := os.Create(fileNameMake)
 
